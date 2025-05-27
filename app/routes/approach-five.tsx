@@ -233,24 +233,7 @@ export default function ApproachFive() {
           </div>
         )}
 
-        <div className="highlights">
-          <div className="highlight-box">
-            <h3>🔗 Multiple Connections</h3>
-            <p>Connect to multiple Bluetooth devices simultaneously</p>
-          </div>
-          <div className="highlight-box">
-            <h3>📱 Device Information</h3>
-            <p>Retrieve comprehensive device details and status</p>
-          </div>
-          <div className="highlight-box">
-            <h3>🔋 Battery Monitoring</h3>
-            <p>Monitor battery levels of connected devices</p>
-          </div>
-          <div className="highlight-box">
-            <h3>📊 Service Discovery</h3>
-            <p>Automatically discover available Bluetooth services</p>
-          </div>
-        </div>
+       
 
         <div className="device-summary">
           <h3>All Device Information</h3>
