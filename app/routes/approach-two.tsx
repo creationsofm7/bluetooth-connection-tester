@@ -26,6 +26,11 @@ export default function ApproachTwo() {
   const characteristicRef = useRef<BluetoothRemoteGATTCharacteristic | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Target service UUID (Nordic UART Service)
+  const TARGET_SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+  const RX_CHARACTERISTIC_UUID = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'; // RX (receive from device)
+  const TX_CHARACTERISTIC_UUID = '6e400003-b5a3-f393-e0a9-e50e24dcca9e'; // TX (transmit to device)
+
   useEffect(() => {
     setIsSupported('bluetooth' in navigator);
     
@@ -46,14 +51,14 @@ export default function ApproachTwo() {
     setError("");
 
     try {
-      // Request device with common services
+      // Request device with the specific Nordic UART service
       const device = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: true,
+        filters: [
+          { services: [TARGET_SERVICE_UUID] }
+        ],
         optionalServices: [
           'battery_service',
           'device_information',
-          'heart_rate',
-          'environmental_sensing',
           'generic_access',
           'generic_attribute'
         ]
@@ -61,55 +66,73 @@ export default function ApproachTwo() {
 
       if (device) {
         setDevice(device);
+        addLog(`Found device: ${device.name || "Unknown Device"}`);
         
         // Connect to GATT server
         const server = await device.gatt?.connect();
         
         if (server) {
           setIsConnected(true);
-          addLog("Connected to device: " + (device.name || "Unknown Device"));
+          addLog("Connected to GATT server");
           
-          // Try to find a readable characteristic
-          await findAndSubscribeToCharacteristic(server);
+          // Connect to the specific Nordic UART service
+          await connectToNordicUartService(server);
         }
       }
     } catch (err) {
       if (err instanceof Error) {
-        setError(`Error connecting: ${err.message}`);
+        if (err.name === 'NotFoundError') {
+          setError(`No device found with Nordic UART Service (${TARGET_SERVICE_UUID}). Make sure your device advertises this service.`);
+        } else {
+          setError(`Error connecting: ${err.message}`);
+        }
       }
     } finally {
       setIsScanning(false);
     }
   };
 
-  const findAndSubscribeToCharacteristic = async (server: BluetoothRemoteGATTServer) => {
+  const connectToNordicUartService = async (server: BluetoothRemoteGATTServer) => {
     try {
-      const services = await server.getPrimaryServices();
+      addLog(`Looking for Nordic UART Service: ${TARGET_SERVICE_UUID}`);
       
-      for (const service of services) {
-        try {
-          const characteristics = await service.getCharacteristics();
+      // Get the Nordic UART service
+      const service = await server.getPrimaryService(TARGET_SERVICE_UUID);
+      addLog(`Found Nordic UART Service: ${service.uuid}`);
+      
+      // Get all characteristics from the service
+      const characteristics = await service.getCharacteristics();
+      addLog(`Found ${characteristics.length} characteristics in Nordic UART Service`);
+      
+      for (const characteristic of characteristics) {
+        addLog(`Characteristic: ${characteristic.uuid}, Properties: ${JSON.stringify(characteristic.properties)}`);
+        
+        // Look for RX characteristic (data from device) or any notify/read characteristic
+        if (characteristic.uuid === RX_CHARACTERISTIC_UUID || 
+            characteristic.properties.notify || 
+            characteristic.properties.read) {
           
-          for (const characteristic of characteristics) {
-            // Check if characteristic supports read or notify
-            if (characteristic.properties.read || characteristic.properties.notify) {
-              characteristicRef.current = characteristic;
-              
-              addLog(`Found readable characteristic: ${characteristic.uuid}`, service.uuid, characteristic.uuid);
-              
-              // Start reading data every second
-              startDataReading();
-              return;
-            }
-          }
-        } catch (serviceErr) {
-          console.log("Error accessing service:", serviceErr);
+          characteristicRef.current = characteristic;
+          addLog(`Using characteristic: ${characteristic.uuid} for data reading`);
+          
+          // Start reading data
+          startDataReading();
+          return;
         }
       }
       
-      addLog("No readable characteristics found");
+      // If no specific characteristic found, try the first available one
+      if (characteristics.length > 0) {
+        characteristicRef.current = characteristics[0];
+        addLog(`Using first available characteristic: ${characteristics[0].uuid}`);
+        startDataReading();
+      } else {
+        addLog("No characteristics found in Nordic UART Service");
+      }
+      
     } catch (err) {
-      setError("Error finding characteristics: " + (err as Error).message);
+      setError(`Error accessing Nordic UART Service: ${(err as Error).message}`);
+      addLog(`Error: ${(err as Error).message}`);
     }
   };
 
@@ -119,23 +142,46 @@ export default function ApproachTwo() {
     }
 
     setIsReading(true);
+    addLog("Starting data reading every 1 second...");
+    
+    // Set up notifications if supported
+    if (characteristicRef.current?.properties.notify) {
+      characteristicRef.current.startNotifications().then(() => {
+        addLog("Notifications enabled");
+        characteristicRef.current?.addEventListener('characteristicvaluechanged', handleCharacteristicValueChanged);
+      }).catch(err => {
+        addLog(`Error enabling notifications: ${err.message}`);
+      });
+    }
     
     intervalRef.current = setInterval(async () => {
       if (characteristicRef.current && isConnected) {
         try {
           if (characteristicRef.current.properties.read) {
             const value = await characteristicRef.current.readValue();
-            const data = new TextDecoder().decode(value);
-            addLog(`Read data: ${data || 'No data'}`, 
+            const dataArray = new Uint8Array(value.buffer);
+            
+            // Try to decode as text first
+            let data: string;
+            try {
+              data = new TextDecoder().decode(value);
+              // If it's just null bytes or empty, show hex instead
+              if (!data.trim() || data.charCodeAt(0) === 0) {
+                data = `[HEX] ${Array.from(dataArray).map(b => b.toString(16).padStart(2, '0')).join(' ')}`;
+              }
+            } catch {
+              // If text decoding fails, show as hex
+              data = `[HEX] ${Array.from(dataArray).map(b => b.toString(16).padStart(2, '0')).join(' ')}`;
+            }
+            
+            addLog(`📡 Read: ${data}`, 
                    characteristicRef.current.service?.uuid,
                    characteristicRef.current.uuid);
-          } else if (characteristicRef.current.properties.notify) {
-            // For notify characteristics, we should set up notifications
-            await characteristicRef.current.startNotifications();
-            characteristicRef.current.addEventListener('characteristicvaluechanged', handleCharacteristicValueChanged);
+          } else {
+            addLog("⚠️ Characteristic doesn't support read - waiting for notifications");
           }
         } catch (err) {
-          addLog(`Error reading data: ${(err as Error).message}`);
+          addLog(`❌ Error reading: ${(err as Error).message}`);
         }
       }
     }, 1000); // Read every second
@@ -145,8 +191,22 @@ export default function ApproachTwo() {
     const characteristic = event.target as BluetoothRemoteGATTCharacteristic;
     const value = characteristic.value;
     if (value) {
-      const data = new TextDecoder().decode(value);
-      addLog(`Notification data: ${data}`, 
+      const dataArray = new Uint8Array(value.buffer);
+      
+      // Try to decode as text first
+      let data: string;
+      try {
+        data = new TextDecoder().decode(value);
+        // If it's just null bytes or empty, show hex instead
+        if (!data.trim() || data.charCodeAt(0) === 0) {
+          data = `[HEX] ${Array.from(dataArray).map(b => b.toString(16).padStart(2, '0')).join(' ')}`;
+        }
+      } catch {
+        // If text decoding fails, show as hex
+        data = `[HEX] ${Array.from(dataArray).map(b => b.toString(16).padStart(2, '0')).join(' ')}`;
+      }
+      
+      addLog(`🔔 Notification: ${data}`, 
              characteristic.service?.uuid,
              characteristic.uuid);
     }
@@ -168,6 +228,10 @@ export default function ApproachTwo() {
       clearInterval(intervalRef.current);
     }
     
+    if (characteristicRef.current?.properties.notify) {
+      characteristicRef.current.removeEventListener('characteristicvaluechanged', handleCharacteristicValueChanged);
+    }
+    
     if (device?.gatt) {
       device.gatt.disconnect();
     }
@@ -176,7 +240,7 @@ export default function ApproachTwo() {
     setIsReading(false);
     setDevice(null);
     characteristicRef.current = null;
-    addLog("Disconnected from device");
+    addLog("🔌 Disconnected from device");
   };
 
   const clearLogs = () => {
@@ -186,8 +250,8 @@ export default function ApproachTwo() {
 
   return (
     <div className="approach-container">
-      <h1>Approach Two - Real-time Data Reader</h1>
-      <p>Connect to a Bluetooth device and continuously read data every second.</p>
+      <h1>Approach Two - Nordic UART Service Reader</h1>
+      <p>Connect to a Bluetooth device with Nordic UART Service ({TARGET_SERVICE_UUID}) and read data every second.</p>
       
       {!isSupported && (
         <div className="error-message" style={{ color: 'red', marginBottom: '20px' }}>
@@ -211,7 +275,7 @@ export default function ApproachTwo() {
                 cursor: isSupported && !isScanning ? 'pointer' : 'not-allowed'
               }}
             >
-              {isScanning ? 'Connecting...' : 'Connect to Device'}
+              {isScanning ? 'Scanning for Nordic UART...' : 'Connect to Nordic UART Device'}
             </button>
           ) : (
             <button 
@@ -261,6 +325,7 @@ export default function ApproachTwo() {
         <div className="status" style={{ marginBottom: '20px' }}>
           <h3>Connection Status</h3>
           <p>Device: {device?.name || 'None'}</p>
+          <p>Target Service: <code>{TARGET_SERVICE_UUID}</code></p>
           <p>Status: 
             <span style={{ 
               color: isConnected ? 'green' : 'red',
@@ -276,7 +341,7 @@ export default function ApproachTwo() {
               fontWeight: 'bold',
               marginLeft: '5px'
             }}>
-              {isReading ? '● Active' : '○ Inactive'}
+              {isReading ? '● Active (every 1s)' : '○ Inactive'}
             </span>
           </p>
         </div>
@@ -295,7 +360,7 @@ export default function ApproachTwo() {
             }}
           >
             {dataLogs.length === 0 ? (
-              <p>No data received yet. Connect to a device to start logging.</p>
+              <p>No data received yet. Connect to a Nordic UART device to start logging.</p>
             ) : (
               dataLogs.map((log, index) => (
                 <div 
@@ -312,7 +377,7 @@ export default function ApproachTwo() {
                   <div style={{ fontWeight: 'bold', color: '#007bff' }}>
                     [{log.timestamp}]
                   </div>
-                  <div>{log.data}</div>
+                  <div style={{ fontFamily: 'monospace' }}>{log.data}</div>
                   {log.service && (
                     <div style={{ color: '#666', fontSize: '10px' }}>
                       Service: {log.service}
@@ -330,13 +395,21 @@ export default function ApproachTwo() {
         </div>
 
         <div className="features" style={{ marginTop: '20px' }}>
-          <h3>Key Benefits:</h3>
+          <h3>Nordic UART Service Features:</h3>
           <ul>
-            <li>Real-time data monitoring</li>
-            <li>Automatic data reading every second</li>
-            <li>Comprehensive logging with timestamps</li>
-            <li>Support for both read and notify characteristics</li>
-            <li>Auto-discovery of readable characteristics</li>
+            <li>🎯 Specifically targets Nordic UART Service (6E400001-B5A3-F393-E0A9-E50E24DCCA9E)</li>
+            <li>📡 Reads data every 1 second from RX characteristic</li>
+            <li>🔔 Listens for notifications automatically</li>
+            <li>🔤 Displays data as text or hex depending on content</li>
+            <li>📝 Comprehensive logging with timestamps and UUIDs</li>
+            <li>⚡ Real-time data monitoring</li>
+          </ul>
+          
+          <h4>Service UUIDs:</h4>
+          <ul style={{ fontFamily: 'monospace', fontSize: '12px' }}>
+            <li>Service: 6E400001-B5A3-F393-E0A9-E50E24DCCA9E</li>
+            <li>RX (Read): 6E400002-B5A3-F393-E0A9-E50E24DCCA9E</li>
+            <li>TX (Write): 6E400003-B5A3-F393-E0A9-E50E24DCCA9E</li>
           </ul>
         </div>
       </div>
