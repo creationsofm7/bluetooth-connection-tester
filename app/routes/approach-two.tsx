@@ -1,4 +1,67 @@
 import { useState, useEffect, useRef } from "react";
+import "./approach-two.css";
+
+// TypeScript declarations for Web Bluetooth API
+declare global {
+  interface Navigator {
+    bluetooth: {
+      requestDevice(options?: RequestDeviceOptions): Promise<BluetoothDevice>;
+    };
+  }
+
+  interface BluetoothDevice {
+    id: string;
+    name?: string;
+    gatt?: BluetoothRemoteGATTServer;
+    watchAdvertisements?(): Promise<void>;
+    addEventListener(type: string, listener: EventListener): void;
+    removeEventListener(type: string, listener: EventListener): void;
+  }
+
+  interface BluetoothRemoteGATTServer {
+    connected: boolean;
+    connect(): Promise<BluetoothRemoteGATTServer>;
+    disconnect(): void;
+    getPrimaryService(service: string): Promise<BluetoothRemoteGATTService>;
+    getPrimaryServices(): Promise<BluetoothRemoteGATTService[]>;
+  }
+
+  interface BluetoothRemoteGATTService {
+    uuid: string;
+    getCharacteristic(characteristic: string): Promise<BluetoothRemoteGATTCharacteristic>;
+    getCharacteristics(): Promise<BluetoothRemoteGATTCharacteristic[]>;
+  }
+
+  interface BluetoothRemoteGATTCharacteristic {
+    uuid: string;
+    service?: BluetoothRemoteGATTService;
+    value?: DataView;
+    properties: {
+      read: boolean;
+      write: boolean;
+      notify: boolean;
+      indicate: boolean;
+    };
+    readValue(): Promise<DataView>;
+    writeValue(value: BufferSource): Promise<void>;
+    startNotifications(): Promise<BluetoothRemoteGATTCharacteristic>;
+    stopNotifications(): Promise<BluetoothRemoteGATTCharacteristic>;
+    addEventListener(type: string, listener: EventListener): void;
+    removeEventListener(type: string, listener: EventListener): void;
+  }
+
+  interface RequestDeviceOptions {
+    filters?: BluetoothLEScanFilter[];
+    optionalServices?: string[];
+    acceptAllDevices?: boolean;
+  }
+
+  interface BluetoothLEScanFilter {
+    services?: string[];
+    name?: string;
+    namePrefix?: string;
+  }
+}
 
 export function meta() {
   return [
@@ -306,7 +369,6 @@ export default function ApproachTwo() {
     setDataLogs([]);
     setError("");
   };
-
   const getLogIcon = (type: string) => {
     switch (type) {
       case 'read': return '📡';
@@ -319,72 +381,30 @@ export default function ApproachTwo() {
     }
   };
 
-  const getLogBackgroundColor = (type: string) => {
-    switch (type) {
-      case 'read': return '#e3f2fd';
-      case 'notification': return '#f3e5f5';
-      case 'connection': return '#e8f5e8';
-      case 'error': return '#ffebee';
-      case 'info': return '#fff3e0';
-      case 'advertising': return '#f0f8ff';
-      default: return '#ffffff';
-    }
-  };
-
-  return (
-    <div className="approach-container" style={{ fontFamily: 'Arial, sans-serif', padding: '20px' }}>
-      <h1 style={{ color: '#333', marginBottom: '10px' }}>Approach Two - Nordic UART Service Reader</h1>
-      <p style={{ color: '#666', marginBottom: '20px' }}>
+  return (    <div className="approach-container">
+      <h1 className="approach-title">Approach Two - Nordic UART Service Reader</h1>
+      <p className="approach-description">
         Connect to a Bluetooth device with Nordic UART Service ({TARGET_SERVICE_UUID}) and read data every second.
       </p>
-      
-      {!isSupported && (
-        <div style={{ 
-          color: '#721c24', 
-          backgroundColor: '#f8d7da',
-          border: '1px solid #f5c6cb',
-          borderRadius: '5px',
-          padding: '15px',
-          marginBottom: '20px'
-        }}>
+        {!isSupported && (
+        <div className="not-supported-warning">
           Web Bluetooth API is not supported in this browser. Please use Chrome, Edge, or Opera.
         </div>
       )}
 
-      <div className="content">
-        <div className="controls" style={{ marginBottom: '20px' }}>
+      <div className="content">        <div className="controls">
           {!isConnected ? (
             <button 
               onClick={connectToDevice}
               disabled={!isSupported || isScanning}
-              style={{ 
-                padding: '12px 24px', 
-                marginRight: '10px',
-                backgroundColor: isSupported && !isScanning ? '#007bff' : '#6c757d',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: isSupported && !isScanning ? 'pointer' : 'not-allowed',
-                fontSize: '14px',
-                fontWeight: 'bold'
-              }}
+              className={`btn ${isSupported && !isScanning ? 'btn-primary' : 'btn-primary'}`}
             >
               {isScanning ? 'Scanning for Nordic UART...' : 'Connect to Nordic UART Device'}
             </button>
           ) : (
             <button 
               onClick={disconnect}
-              style={{ 
-                padding: '12px 24px', 
-                marginRight: '10px',
-                backgroundColor: '#dc3545',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: 'bold'
-              }}
+              className="btn btn-danger"
             >
               Disconnect
             </button>
@@ -392,152 +412,63 @@ export default function ApproachTwo() {
           
           <button 
             onClick={clearLogs}
-            style={{ 
-              padding: '12px 24px',
-              backgroundColor: '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold'
-            }}
+            className="btn btn-secondary"
           >
             Clear Logs
           </button>
-        </div>
-
-        {error && (
-          <div style={{ 
-            color: '#721c24',
-            backgroundColor: '#f8d7da',
-            border: '1px solid #f5c6cb',
-            borderRadius: '5px',
-            padding: '15px',
-            marginBottom: '20px'
-          }}>
+        </div>        {error && (
+          <div className="error-message">
             {error}
           </div>
-        )}
-
-        <div className="status" style={{ 
-          marginBottom: '20px',
-          padding: '15px',
-          backgroundColor: '#f8f9fa',
-          border: '1px solid #dee2e6',
-          borderRadius: '5px'
-        }}>
-          <h3 style={{ margin: '0 0 10px 0', color: '#333' }}>Connection Status</h3>
-          <p style={{ margin: '5px 0', color: '#333' }}>Device: <strong>{device?.name || 'None'}</strong></p>
-          <p style={{ margin: '5px 0', color: '#333' }}>Target Service: <code style={{ backgroundColor: '#e9ecef', padding: '2px 4px', borderRadius: '3px' }}>{TARGET_SERVICE_UUID}</code></p>
-          <p style={{ margin: '5px 0', color: '#333' }}>Status: 
-            <span style={{ 
-              color: isConnected ? '#28a745' : '#dc3545',
-              fontWeight: 'bold',
-              marginLeft: '5px'
-            }}>
+        )}        <div className="status-section">
+          <h3 className="status-title">Connection Status</h3>
+          <p className="status-item">Device: <strong>{device?.name || 'None'}</strong></p>
+          <p className="status-item">Target Service: <code className="status-code">{TARGET_SERVICE_UUID}</code></p>
+          <p className="status-item">Status: 
+            <span className={isConnected ? 'status-connected' : 'status-disconnected'}>
               {isConnected ? '● Connected' : '○ Disconnected'}
             </span>
           </p>
-          <p style={{ margin: '5px 0', color: '#333' }}>Reading Data: 
-            <span style={{ 
-              color: isReading ? '#28a745' : '#ffc107',
-              fontWeight: 'bold',
-              marginLeft: '5px'
-            }}>
+          <p className="status-item">Reading Data: 
+            <span className={isReading ? 'status-active' : 'status-inactive'}>
               {isReading ? '● Active (every 1s)' : '○ Inactive'}
             </span>
           </p>
         </div>
 
-        <div className="methodology">
-          <h2 style={{ color: '#333', marginBottom: '15px' }}>Data Logs ({dataLogs.length})</h2>
-          <div 
-            className="logs-container" 
-            style={{ 
-              height: '400px', 
-              overflowY: 'auto', 
-              border: '2px solid #dee2e6',
-              borderRadius: '8px',
-              padding: '10px',
-              backgroundColor: '#ffffff'
-            }}
-          >
-            {dataLogs.length === 0 ? (
-              <p style={{ color: '#6c757d', textAlign: 'center', padding: '20px' }}>
+        <div className="methodology">          
+          <h2 className="data-logs-title">Data Logs ({dataLogs.length})</h2>
+          <div className="logs-container">
+            {dataLogs.length === 0 ? (              <p className="empty-logs">
                 No data received yet. Connect to a Nordic UART device to start logging.
               </p>
             ) : (
-              dataLogs.map((log, index) => (
-                <div 
+              dataLogs.map((log, index) => (                <div 
                   key={index}
-                  style={{
-                    marginBottom: '8px',
-                    padding: '12px',
-                    border: '1px solid #dee2e6',
-                    borderRadius: '5px',
-                    backgroundColor: getLogBackgroundColor(log.type),
-                    fontSize: '13px'
-                  }}
-                >
-                  <div style={{ 
-                    fontWeight: 'bold', 
-                    color: '#007bff',
-                    marginBottom: '4px',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
-                    <span style={{ marginRight: '8px' }}>{getLogIcon(log.type)}</span>
+                  className={`log-entry ${log.type}`}
+                >                  <div className="log-header">
+                    <span className="log-icon">{getLogIcon(log.type)}</span>
                     [{log.timestamp}] {log.type.toUpperCase()}
-                  </div>
-                  <div style={{ 
-                    fontFamily: 'Consolas, Monaco, "Courier New", monospace',
-                    color: '#000000',
-                    fontWeight: 'bold',
-                    fontSize: '14px',
-                    backgroundColor: '#ffffff',
-                    padding: '8px',
-                    borderRadius: '3px',
-                    border: '1px solid #ccc',
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-all'
-                  }}>
+                  </div>                  <div className="log-data">
                     {log.data}
-                  </div>
-                  {log.service && (
-                    <div style={{ 
-                      color: '#495057', 
-                      fontSize: '11px', 
-                      marginTop: '4px',
-                      fontFamily: 'Consolas, Monaco, "Courier New", monospace'
-                    }}>
+                  </div>                  {log.service && (
+                    <div className="log-service">
                       Service: {log.service}
                     </div>
                   )}
                   {log.characteristic && (
-                    <div style={{ 
-                      color: '#495057', 
-                      fontSize: '11px',
-                      fontFamily: 'Consolas, Monaco, "Courier New", monospace'
-                    }}>
+                    <div className="log-characteristic">
                       Characteristic: {log.characteristic}
                     </div>
                   )}
                 </div>
               ))
-            )}
-          </div>
+            )}          </div>
         </div>
 
-        <div className="features" style={{ 
-          marginTop: '20px',
-          padding: '15px',
-          backgroundColor: '#f8f9fa',
-          border: '1px solid #dee2e6',
-          borderRadius: '5px'
-        }}>
-          <h3 style={{ color: '#333', marginBottom: '10px' }}>Nordic UART Service Features:</h3>
-          <ul style={{ color: '#333', lineHeight: '1.6' }}>
+        <div className="features-section">
+          <h3 className="features-title">Nordic UART Service Features:</h3>
+          <ul className="features-list">
             <li>🎯 Specifically targets Nordic UART Service (6E400001-B5A3-F393-E0A9-E50E24DCCA9E)</li>
             <li>📡 Reads data every 1 second from RX characteristic</li>
             <li>🔔 Listens for notifications automatically</li>
@@ -547,18 +478,10 @@ export default function ApproachTwo() {
             <li>⚡ Real-time data monitoring</li>
           </ul>
           
-          <h4 style={{ color: '#333', marginTop: '15px', marginBottom: '8px' }}>Service UUIDs:</h4>
-          <ul style={{ 
-            fontFamily: 'Consolas, Monaco, "Courier New", monospace', 
-            fontSize: '12px',
-            color: '#333',
-            backgroundColor: '#ffffff',
-            padding: '10px',
-            borderRadius: '3px',
-            border: '1px solid #dee2e6'
-          }}>
-            <li style={{ marginBottom: '4px' }}>Service: {TARGET_SERVICE_UUID}</li>
-            <li style={{ marginBottom: '4px' }}>RX (Read): {RX_CHARACTERISTIC_UUID}</li>
+          <h4 className="uuids-title">Service UUIDs:</h4>
+          <ul className="uuids-list">
+            <li>Service: {TARGET_SERVICE_UUID}</li>
+            <li>RX (Read): {RX_CHARACTERISTIC_UUID}</li>
             <li>TX (Write): {TX_CHARACTERISTIC_UUID}</li>
           </ul>
         </div>

@@ -1,0 +1,286 @@
+/* Approach Two - Nordic UART Service Reader Styles */
+
+.approach-container {
+  font-family: 'Arial', sans-serif;
+  padding: 20px;
+}
+
+.approach-title {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.approach-description {
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.not-supported-warning {
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.controls {
+  margin-bottom: 20px;
+}
+
+.btn {
+  padding: 12px 24px;
+  margin-right: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-primary:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.error-message {
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.status-section {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+}
+
+.status-title {
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.status-item {
+  margin: 5px 0;
+  color: #333;
+}
+
+.status-code {
+  background-color: #e9ecef;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+.status-connected {
+  color: #28a745;
+  font-weight: bold;
+  margin-left: 5px;
+}
+
+.status-disconnected {
+  color: #dc3545;
+  font-weight: bold;
+  margin-left: 5px;
+}
+
+.status-active {
+  color: #28a745;
+  font-weight: bold;
+  margin-left: 5px;
+}
+
+.status-inactive {
+  color: #ffc107;
+  font-weight: bold;
+  margin-left: 5px;
+}
+
+.data-logs-title {
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.logs-container {
+  height: 400px;
+  overflow-y: auto;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  padding: 10px;
+  background-color: #ffffff;
+}
+
+.empty-logs {
+  color: #6c757d;
+  text-align: center;
+  padding: 20px;
+}
+
+.log-entry {
+  margin-bottom: 8px;
+  padding: 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+  font-size: 13px;
+}
+
+.log-entry.read {
+  background-color: #e3f2fd;
+}
+
+.log-entry.notification {
+  background-color: #f3e5f5;
+}
+
+.log-entry.connection {
+  background-color: #e8f5e8;
+}
+
+.log-entry.error {
+  background-color: #ffebee;
+}
+
+.log-entry.info {
+  background-color: #fff3e0;
+}
+
+.log-entry.advertising {
+  background-color: #f0f8ff;
+}
+
+.log-header {
+  font-weight: bold;
+  color: #007bff;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.log-icon {
+  margin-right: 8px;
+}
+
+.log-data {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  color: #000000;
+  font-weight: bold;
+  font-size: 14px;
+  background-color: #ffffff;
+  padding: 8px;
+  border-radius: 3px;
+  border: 1px solid #ccc;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.log-service,
+.log-characteristic {
+  color: #495057;
+  font-size: 11px;
+  margin-top: 4px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+.log-characteristic {
+  margin-top: 0;
+}
+
+.features-section {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+}
+
+.features-title {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.features-list {
+  color: #333;
+  line-height: 1.6;
+}
+
+.uuids-title {
+  color: #333;
+  margin-top: 15px;
+  margin-bottom: 8px;
+}
+
+.uuids-list {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  color: #333;
+  background-color: #ffffff;
+  padding: 10px;
+  border-radius: 3px;
+  border: 1px solid #dee2e6;
+}
+
+.uuids-list li {
+  margin-bottom: 4px;
+}
+
+.uuids-list li:last-child {
+  margin-bottom: 0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .approach-container {
+    padding: 15px;
+  }
+  
+  .btn {
+    padding: 10px 20px;
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+  
+  .logs-container {
+    height: 300px;
+  }
+  
+  .log-data {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .controls {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .btn {
+    margin-right: 0;
+    margin-bottom: 10px;
+  }
+}
