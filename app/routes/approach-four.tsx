@@ -10,7 +10,7 @@ export function meta() {
 const SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"; // Lowercase for Web Bluetooth API
 const CHARACTERISTIC_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"; // Lowercase for Web Bluetooth API
 
-interface IMUData {
+interface IMUDataNumericKeys {
   accX?: number;
   accY?: number;
   accZ?: number;
@@ -21,12 +21,16 @@ interface IMUData {
   magY?: number;
   magZ?: number;
   Battery?: number;
+}
+
+interface IMUData extends IMUDataNumericKeys {
   Timestamp?: string;
 }
 
 function parseIMUString(dataStr: string): IMUData | null {
   const parsed: IMUData = {};
-  const keyMap: { [key: string]: keyof IMUData } = {
+  // Explicitly type the keys that map to numeric values
+  const keyMap: { [key: string]: keyof IMUDataNumericKeys } = {
     AX: "accX", AY: "accY", AZ: "accZ",
     GX: "gyrX", GY: "gyrY", GZ: "gyrZ",
     MX: "magX", MY: "magY", MZ: "magZ",
@@ -38,7 +42,8 @@ function parseIMUString(dataStr: string): IMUData | null {
     const label = match[1];
     const value = parseFloat(match[2]);
     if (label in keyMap) {
-      parsed[keyMap[label]] = value;
+      const dataKey = keyMap[label]; // dataKey is now keyof IMUDataNumericKeys
+      parsed[dataKey] = value; 
     }
   }
 
@@ -51,7 +56,7 @@ function parseIMUString(dataStr: string): IMUData | null {
   }
   
   // Only return data if some valid IMU fields were parsed
-  const imuKeys: (keyof IMUData)[] = ["accX", "accY", "accZ", "gyrX", "gyrY", "gyrZ", "magX", "magY", "magZ"];
+  const imuKeys: (keyof IMUDataNumericKeys)[] = ["accX", "accY", "accZ", "gyrX", "gyrY", "gyrZ", "magX", "magY", "magZ"];
   const hasIMUData = imuKeys.some(key => parsed[key] !== undefined);
 
   if (!hasIMUData && parsed.Battery === undefined) return null;
@@ -129,6 +134,29 @@ export default function ApproachFour() {
       console.log("Characteristic obtained.");
       setCharacteristic(char);
 
+      // Define the disconnect handler within connectToDevice to close over 'char' (and bleDevice)
+      const handleDeviceDisconnect = () => {
+        console.log('Device disconnected');
+        // 'char' here refers to the characteristic from this connectToDevice call
+        char.removeEventListener('characteristicvaluechanged', handleNotifications);
+        console.log("Notifications listener (characteristicvaluechanged) removed due to gattserverdisconnected event.");
+
+        setIsConnected(false);
+        setDevice(null); // Clear device state
+        setCharacteristic(null); // Clear characteristic state
+        setError("Device disconnected.");
+
+        // Remove this specific gattserverdisconnected listener from the device
+        // to prevent multiple listeners if connect is called again on the same device instance.
+        if (bleDevice) {
+            bleDevice.removeEventListener('gattserverdisconnected', handleDeviceDisconnect);
+            console.log("gattserverdisconnected listener removed from device.");
+        }
+      };
+      
+      // Add the event listener for device disconnection
+      bleDevice.addEventListener('gattserverdisconnected', handleDeviceDisconnect);
+
       console.log("Starting notifications...");
       await char.startNotifications();
       char.addEventListener("characteristicvaluechanged", handleNotifications);
@@ -136,16 +164,17 @@ export default function ApproachFour() {
       setError(null);
       console.log("Notifications started. Listening for data...");
 
-      bleDevice.addEventListener('gattserverdisconnected', () => {
-        console.log('Device disconnected');
-        setIsConnected(false);
-        setDevice(null);
-        setCharacteristic(null);
-        setError("Device disconnected.");
-        if (characteristic) {
-            characteristic.removeEventListener('characteristicvaluechanged', handleNotifications);
-        }
-      });
+      // Original gattserverdisconnected listener is now replaced by handleDeviceDisconnect above
+      // bleDevice.addEventListener('gattserverdisconnected', () => {
+      //   console.log('Device disconnected');
+      //   setIsConnected(false);
+      //   setDevice(null);
+      //   setCharacteristic(null);
+      //   setError("Device disconnected.");
+      //   if (characteristic) {
+      //       characteristic.removeEventListener('characteristicvaluechanged', handleNotifications);
+      //   }
+      // });
 
     } catch (err: any) {
       console.error("Bluetooth connection error:", err);
@@ -155,34 +184,71 @@ export default function ApproachFour() {
   };
 
   const disconnectDevice = async () => {
-    if (device && device.gatt && device.gatt.connected) {
+    if (device && device.gatt) {
       try {
         if (characteristic) {
-          await characteristic.stopNotifications();
+          // Only attempt to stop notifications if the device is still connected
+          if (device.gatt.connected) {
+            try {
+              await characteristic.stopNotifications();
+              console.log("Notifications stopped.");
+            } catch (e: any) {
+              console.warn("Error stopping notifications (device might have disconnected abruptly):", e.message);
+              // Check if it's a known error for disconnected state
+              if (!(e.name === 'NetworkError' || e.message.includes('GATT Server is disconnected') || e.message.includes('GATT operation failed'))) {
+                // setError(`Error stopping notifications: ${e.message}`); // Avoid overwriting a more general disconnect error
+              }
+            }
+          }
           characteristic.removeEventListener('characteristicvaluechanged', handleNotifications);
-          console.log("Notifications stopped.");
+          console.log("characteristicvaluechanged listener removed during manual disconnect.");
         }
-        device.gatt.disconnect();
-        console.log("Disconnected from device.");
+        
+        // Only disconnect if the GATT server is still connected
+        if (device.gatt.connected) {
+          device.gatt.disconnect();
+          console.log("Disconnected from device via gatt.disconnect().");
+        } else {
+          console.log("Device already disconnected, gatt.disconnect() not called.");
+        }
       } catch (err: any) {
-        console.error("Error disconnecting:", err);
+        console.error("Error during manual disconnect process:", err);
         setError(`Error disconnecting: ${err.message}`);
       }
     }
+    // Always update UI state to reflect disconnection
     setIsConnected(false);
     setDevice(null);
     setCharacteristic(null);
+    // If no other error set, can indicate manual disconnect completion
+    // if (!error) setError("Disconnected."); // Optional: set a generic disconnected message
   };
   
   useEffect(() => {
     return () => {
       // Cleanup on component unmount
-      if (device && device.gatt && device.gatt.connected) {
-        if (characteristic) { // Check if characteristic is defined
-            characteristic.stopNotifications().catch(e => console.warn("Error stopping notifications on unmount", e));
-            characteristic.removeEventListener('characteristicvaluechanged', handleNotifications);
-        }
-        device.gatt.disconnect();
+      if (device && device.gatt && characteristic) { // Ensure all are present
+        // Local reference for cleanup, as state might change
+        const currentDevice = device;
+        const currentCharacteristic = characteristic;
+
+        const cleanup = async () => {
+          if (currentDevice.gatt && currentDevice.gatt.connected) {
+            try {
+              await currentCharacteristic.stopNotifications();
+              console.log("Notifications stopped on unmount.");
+            } catch (e) {
+              console.warn("Error stopping notifications on unmount (device might be gone):", e);
+            }
+          }
+          currentCharacteristic.removeEventListener('characteristicvaluechanged', handleNotifications);
+          console.log("characteristicvaluechanged listener removed on unmount.");
+          if (currentDevice.gatt && currentDevice.gatt.connected) {
+            currentDevice.gatt.disconnect();
+            console.log("Device disconnected on unmount.");
+          }
+        };
+        cleanup();
       }
     };
   }, [device, characteristic]); // Add characteristic to dependency array
