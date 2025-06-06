@@ -521,110 +521,156 @@ export default function ApproachFive() {
           padding: 20px;
           max-width: 1200px;
           margin: 0 auto;
-          font-family: system-ui, sans-serif;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          background: #f5f7fa;
+          min-height: 100vh;
         }
 
         .control-panel {
-          background: #f0f0f0;
-          padding: 20px;
-          border-radius: 8px;
-          margin-bottom: 20px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          padding: 24px;
+          border-radius: 12px;
+          margin-bottom: 24px;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.12);
         }
 
         .scan-button {
-          background: #007bff;
+          background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
           color: white;
           border: none;
-          padding: 12px 24px;
-          border-radius: 4px;
+          padding: 14px 28px;
+          border-radius: 8px;
           cursor: pointer;
           font-size: 16px;
-          margin-bottom: 10px;
-          transition: background-color 0.2s;
+          font-weight: 600;
+          margin-bottom: 16px;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
         }
         .scan-button:hover {
-          background: #0056b3;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
         }
         .scan-button:disabled {
-          background: #6c757d;
+          background: #9e9e9e;
           cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
         }
 
         .status, .device-count {
-          margin: 10px 0;
+          margin: 12px 0;
           font-size: 14px;
+          background: rgba(255, 255, 255, 0.1);
+          padding: 8px 12px;
+          border-radius: 6px;
+          backdrop-filter: blur(10px);
         }
 
         .devices-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-          gap: 20px;
-          margin-bottom: 30px;
+          grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+          gap: 24px;
+          margin-bottom: 32px;
         }
 
         .device-card {
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          padding: 16px;
+          border: 1px solid #e1e8ed;
+          border-radius: 16px;
+          padding: 20px;
           background: white;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+          box-shadow: 0 4px 20px rgba(0,0,0,0.08);
           display: flex;
           flex-direction: column;
           justify-content: space-between;
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
+        }
+        .device-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 8px 30px rgba(0,0,0,0.12);
         }
         .device-card.device-connected {
-          border-left: 5px solid #28a745;
+          border-left: 6px solid #4CAF50;
+          background: linear-gradient(135deg, #ffffff 0%, #f8fff9 100%);
+        }
+        .device-card.device-connected::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          right: 0;
+          width: 0;
+          height: 0;
+          border-style: solid;
+          border-width: 0 20px 20px 0;
+          border-color: transparent #4CAF50 transparent transparent;
         }
 
         .device-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 12px;
-          padding-bottom: 10px;
-          border-bottom: 1px solid #eee;
+          margin-bottom: 16px;
+          padding-bottom: 12px;
+          border-bottom: 2px solid #f0f4f8;
         }
 
         .device-header h3 {
           margin: 0;
-          color: #333;
-          font-size: 1.1em;
+          color: #2d3748;
+          font-size: 1.2em;
+          font-weight: 700;
         }
 
         .status-indicator {
           font-size: 12px;
-          padding: 4px 8px;
-          border-radius: 12px;
+          font-weight: 600;
+          padding: 6px 12px;
+          border-radius: 20px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
-        .status-indicator.connected { background: #e6ffed; color: #28a745; }
-        .status-indicator.disconnected { background: #ffebee; color: #dc3545; }
+        .status-indicator.connected { 
+          background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+          color: white;
+          box-shadow: 0 2px 8px rgba(72, 187, 120, 0.3);
+        }
+        .status-indicator.disconnected { 
+          background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+          color: white;
+          box-shadow: 0 2px 8px rgba(245, 101, 101, 0.3);
+        }
 
         .device-info {
-          margin-bottom: 16px;
+          margin-bottom: 20px;
           font-size: 14px;
+          line-height: 1.6;
         }
         .device-info p {
-          margin: 6px 0;
-          color: #555;
+          margin: 8px 0;
+          color: #4a5568;
         }
         .device-info p strong {
-          color: #333;
+          color: #2d3748;
+          font-weight: 600;
         }
 
         .imu-data-display {
-          margin-top: 10px;
-          margin-bottom: 16px;
-          background-color: #f9f9f9;
-          padding: 10px;
-          border-radius: 4px;
-          border: 1px solid #eee;
+          margin-top: 12px;
+          margin-bottom: 20px;
+          background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+          padding: 16px;
+          border-radius: 12px;
+          border: 1px solid #90cdf4;
         }
         .imu-data-display h4 {
           margin-top: 0;
-          margin-bottom: 8px;
-          font-size: 0.9em;
-          color: #333;
+          margin-bottom: 12px;
+          font-size: 1em;
+          color: #2b6cb0;
+          font-weight: 700;
         }
         .imu-data-display pre {
           white-space: pre-wrap;
@@ -632,86 +678,159 @@ export default function ApproachFive() {
           font-size: 12px;
           max-height: 150px;
           overflow-y: auto;
-          background: #fff;
-          padding: 8px;
-          border-radius: 3px;
+          background: rgba(255, 255, 255, 0.8);
+          padding: 12px;
+          border-radius: 8px;
+          color: #2d3748;
+          border: 1px solid #cbd5e0;
         }
-
 
         .device-actions {
           display: flex;
-          gap: 8px;
-          margin-top: auto; /* Pushes actions to the bottom */
+          gap: 12px;
+          margin-top: auto;
         }
 
         .connect-button, .disconnect-button, .remove-button {
           flex: 1;
-          padding: 9px 12px;
+          padding: 12px 16px;
           border: none;
-          border-radius: 4px;
+          border-radius: 8px;
           cursor: pointer;
           font-size: 14px;
-          transition: background-color 0.2s, opacity 0.2s;
+          font-weight: 600;
+          transition: all 0.3s ease;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
         .connect-button:disabled, .disconnect-button:disabled, .remove-button:disabled {
-          opacity: 0.7;
+          opacity: 0.5;
           cursor: not-allowed;
+          transform: none;
         }
 
-        .connect-button { background: #28a745; color: white; }
-        .connect-button:hover:not(:disabled) { background: #218838; }
+        .connect-button { 
+          background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+          color: white;
+          box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+        }
+        .connect-button:hover:not(:disabled) { 
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
+        }
         
-        .disconnect-button { background: #ffc107; color: #212529; } /* Yellow for cancel/disconnect */
-        .disconnect-button:hover:not(:disabled) { background: #e0a800; }
+        .disconnect-button { 
+          background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+          color: white;
+          box-shadow: 0 4px 15px rgba(237, 137, 54, 0.3);
+        }
+        .disconnect-button:hover:not(:disabled) { 
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(237, 137, 54, 0.4);
+        }
 
-        .remove-button { background: #dc3545; color: white; }
-        .remove-button:hover:not(:disabled) { background: #c82333; }
-
+        .remove-button { 
+          background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+          color: white;
+          box-shadow: 0 4px 15px rgba(245, 101, 101, 0.3);
+        }
+        .remove-button:hover:not(:disabled) { 
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(245, 101, 101, 0.4);
+        }
 
         .empty-state {
           text-align: center;
-          padding: 40px;
-          color: #666;
-          background: #f8f9fa;
-          border-radius: 8px;
-          margin-bottom: 30px;
+          padding: 48px 24px;
+          color: #718096;
+          background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+          border-radius: 16px;
+          margin-bottom: 32px;
+          border: 2px dashed #cbd5e0;
         }
 
         .device-summary {
-          background: #f8f9fa;
-          padding: 20px;
-          border-radius: 8px;
-          margin-top: 30px;
+          background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+          padding: 24px;
+          border-radius: 16px;
+          margin-top: 32px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+          border: 1px solid #e2e8f0;
         }
-        .device-summary h3 { color: #333; }
+        .device-summary h3 { 
+          color: #2d3748;
+          font-weight: 700;
+          margin-bottom: 16px;
+        }
         .device-data {
-          background: #fff;
-          padding: 16px;
-          border-radius: 4px;
+          background: #1a202c;
+          color: #e2e8f0;
+          padding: 20px;
+          border-radius: 12px;
           overflow-x: auto;
           font-size: 12px;
-          color: #333;
-          border: 1px solid #ddd;
-          max-height: 300px; /* Limit height */
+          font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+          border: 1px solid #4a5568;
+          max-height: 300px;
+          box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
         }
 
         .record-button {
-          background: #007bff;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           color: white;
           border: none;
-          padding: 12px 24px;
-          border-radius: 4px;
+          padding: 14px 28px;
+          border-radius: 8px;
           cursor: pointer;
           font-size: 16px;
-          margin-top: 10px;
-          transition: background-color 0.2s;
+          font-weight: 600;
+          margin-top: 16px;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
         .record-button:hover {
-          background: #0056b3;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
         }
         .record-button:disabled {
-          background: #6c757d;
+          background: #9e9e9e;
           cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
+        }
+
+        /* Custom scrollbar for better aesthetics */
+        .device-data::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        .device-data::-webkit-scrollbar-track {
+          background: #2d3748;
+          border-radius: 4px;
+        }
+        .device-data::-webkit-scrollbar-thumb {
+          background: #4a5568;
+          border-radius: 4px;
+        }
+        .device-data::-webkit-scrollbar-thumb:hover {
+          background: #718096;
+        }
+
+        .imu-data-display pre::-webkit-scrollbar {
+          width: 6px;
+        }
+        .imu-data-display pre::-webkit-scrollbar-track {
+          background: #e2e8f0;
+          border-radius: 3px;
+        }
+        .imu-data-display pre::-webkit-scrollbar-thumb {
+          background: #cbd5e0;
+          border-radius: 3px;
+        }
+        .imu-data-display pre::-webkit-scrollbar-thumb:hover {
+          background: #a0aec0;
         }
       `}</style>
     </div>
