@@ -370,11 +370,17 @@ export default function ApproachFive() {
     setIsRecording(false);
     
     // Generate CSV for each device
-    Object.entries(recordedData).forEach(([deviceId, data]) => {
+    Object.entries(recordedData).forEach(([deviceId, data], index) => {
       if (data.length > 0) {
         const device = devices.find(d => d.id === deviceId);
         const deviceName = device?.name || deviceId.substring(0, 8);
         const csvContent = generateCSV(data);
+        
+        if (index === 0) { // Log the first device's CSV data for debugging
+            console.log(`[Debug] CSV Content for ${deviceName}:`);
+            console.log(csvContent);
+        }
+
         downloadCSV(csvContent, `${deviceName}_data_${new Date().toISOString()}.csv`);
       }
     });
@@ -383,9 +389,30 @@ export default function ApproachFive() {
   };
 
   const generateCSV = (data: IMUData[]): string => {
-    const headers = Object.keys(data[0] || {}).join(',');
-    const rows = data.map(d => Object.values(d).join(','));
-    return [headers, ...rows].join('\n');
+    if (!data || data.length === 0) return '';
+    
+    // Define a fixed order of headers to ensure consistency
+    const headers: (keyof IMUData)[] = [
+      'Timestamp', 'accX', 'accY', 'accZ', 
+      'gyrX', 'gyrY', 'gyrZ', 
+      'magX', 'magY', 'magZ', 'Battery'
+    ];
+
+    // Filter out headers for columns that have no data at all
+    const activeHeaders = headers.filter(header => 
+      data.some(row => row[header] !== undefined && row[header] !== null)
+    );
+
+    const headerRow = activeHeaders.join(',');
+    
+    const rows = data.map(d => {
+      return activeHeaders.map(header => {
+        const value = d[header];
+        return value !== undefined ? value : ''; // Use empty string for missing values
+      }).join(',');
+    });
+
+    return [headerRow, ...rows].join('\n');
   };
 
   const downloadCSV = (content: string, filename: string) => {
@@ -398,6 +425,7 @@ export default function ApproachFive() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url); // Clean up the object URL after download is triggered
   };
 
   return (
