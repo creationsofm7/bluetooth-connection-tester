@@ -76,6 +76,8 @@ export default function ApproachFive() {
   const [devices, setDevices] = useState<ExtendedBluetoothDeviceInfo[]>([]);
   const [isScanning, setIsScanning] = useState(false); // For the "Scan for Devices" button state
   const [globalStatus, setGlobalStatus] = useState<string>("Ready"); // Overall status message
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedData, setRecordedData] = useState<{[deviceId: string]: IMUData[]}>({});
 
   const handleNotifications = useCallback((event: Event, deviceId: string) => {
     const target = event.target as unknown as BluetoothRemoteGATTCharacteristic;
@@ -91,6 +93,13 @@ export default function ApproachFive() {
             d.id === deviceId ? { ...d, imuData: parsedData, connectionError: undefined } : d
           )
         );
+
+        if (isRecording) {
+          setRecordedData(prev => ({
+            ...prev,
+            [deviceId]: [...(prev[deviceId] || []), parsedData]
+          }));
+        }
       } else {
         // console.log(`Failed to parse IMU data or empty packet from ${deviceId}:`, text);
         setDevices(prevDevices =>
@@ -100,7 +109,7 @@ export default function ApproachFive() {
         );
       }
     }
-  }, []); // parseIMUString is stable, setDevices is stable
+  }, [isRecording]); // parseIMUString is stable, setDevices is stable
 
   const scanForDevices = useCallback(async () => {
     setIsScanning(true);
@@ -258,9 +267,10 @@ export default function ApproachFive() {
     const deviceToDisconnect = devices.find(d => d.id === deviceId);
 
     if (deviceToDisconnect && deviceToDisconnect.deviceObject && deviceToDisconnect.deviceObject.gatt) {
-      const { deviceObject: bleDevice, characteristic, notificationHandler, disconnectHandler } = deviceToDisconnect;
+      const bleDevice = deviceToDisconnect.deviceObject;
+      const { characteristic, notificationHandler, disconnectHandler } = deviceToDisconnect;
 
-      if (characteristic && bleDevice.gatt.connected) {
+      if (characteristic && bleDevice.gatt?.connected) {
         try {
           await characteristic.stopNotifications();
           // console.log(`Notifications stopped for ${deviceId}.`);
@@ -274,7 +284,7 @@ export default function ApproachFive() {
         bleDevice.removeEventListener('gattserverdisconnected', disconnectHandler);
       }
 
-      if (bleDevice.gatt.connected) {
+      if (bleDevice.gatt?.connected) {
         bleDevice.gatt.disconnect();
         // console.log(`Disconnected from GATT server for ${deviceId}.`);
       }
@@ -350,6 +360,46 @@ export default function ApproachFive() {
     }));
   }, [devices]);
 
+  const startRecording = () => {
+    setRecordedData({});
+    setIsRecording(true);
+    setGlobalStatus("Recording started for all connected devices");
+  };
+
+  const stopRecording = () => {
+    setIsRecording(false);
+    
+    // Generate CSV for each device
+    Object.entries(recordedData).forEach(([deviceId, data]) => {
+      if (data.length > 0) {
+        const device = devices.find(d => d.id === deviceId);
+        const deviceName = device?.name || deviceId.substring(0, 8);
+        const csvContent = generateCSV(data);
+        downloadCSV(csvContent, `${deviceName}_data_${new Date().toISOString()}.csv`);
+      }
+    });
+
+    setGlobalStatus("Recording stopped. CSV files downloaded.");
+  };
+
+  const generateCSV = (data: IMUData[]): string => {
+    const headers = Object.keys(data[0] || {}).join(',');
+    const rows = data.map(d => Object.values(d).join(','));
+    return [headers, ...rows].join('\n');
+  };
+
+  const downloadCSV = (content: string, filename: string) => {
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="approach-container">
       <h1>Approach Five - Multiple Device Connection & IMU Data</h1>
@@ -373,6 +423,14 @@ export default function ApproachFive() {
           <div className="device-count">
             <strong>Devices in list:</strong> {devices.length}
           </div>
+
+          <button 
+            onClick={isRecording ? stopRecording : startRecording}
+            disabled={!devices.some(d => d.connected)}
+            className="record-button"
+          >
+            {isRecording ? "Stop Recording" : "Start Recording"}
+          </button>
         </div>
 
         <div className="devices-grid">
@@ -635,6 +693,25 @@ export default function ApproachFive() {
           color: #333;
           border: 1px solid #ddd;
           max-height: 300px; /* Limit height */
+        }
+
+        .record-button {
+          background: #007bff;
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 16px;
+          margin-top: 10px;
+          transition: background-color 0.2s;
+        }
+        .record-button:hover {
+          background: #0056b3;
+        }
+        .record-button:disabled {
+          background: #6c757d;
+          cursor: not-allowed;
         }
       `}</style>
     </div>
