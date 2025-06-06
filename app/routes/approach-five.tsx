@@ -79,6 +79,12 @@ export default function ApproachFive() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordedData, setRecordedData] = useState<{[deviceId: string]: IMUData[]}>({});
 
+  // Ref to hold the current isRecording state to avoid stale closures in callbacks
+  const isRecordingRef = React.useRef(isRecording);
+  useEffect(() => {
+    isRecordingRef.current = isRecording;
+  }, [isRecording]);
+
   const handleNotifications = useCallback((event: Event, deviceId: string) => {
     const target = event.target as unknown as BluetoothRemoteGATTCharacteristic;
     const value = target.value;
@@ -94,7 +100,7 @@ export default function ApproachFive() {
           )
         );
 
-        if (isRecording) {
+        if (isRecordingRef.current) {
           setRecordedData(prev => ({
             ...prev,
             [deviceId]: [...(prev[deviceId] || []), parsedData]
@@ -109,7 +115,7 @@ export default function ApproachFive() {
         );
       }
     }
-  }, [isRecording]); // parseIMUString is stable, setDevices is stable
+  }, []); // parseIMUString is stable, setDevices is stable
 
   const scanForDevices = useCallback(async () => {
     setIsScanning(true);
@@ -370,16 +376,14 @@ export default function ApproachFive() {
     setIsRecording(false);
     
     // Generate CSV for each device
-    Object.entries(recordedData).forEach(([deviceId, data], index) => {
+    Object.entries(recordedData).forEach(([deviceId, data]) => {
       if (data.length > 0) {
         const device = devices.find(d => d.id === deviceId);
         const deviceName = device?.name || deviceId.substring(0, 8);
         const csvContent = generateCSV(data);
         
-        if (index === 0) { // Log the first device's CSV data for debugging
-            console.log(`[Debug] CSV Content for ${deviceName}:`);
-            console.log(csvContent);
-        }
+        console.log(`[Debug] CSV Content for ${deviceName}:`);
+        console.log(csvContent);
 
         downloadCSV(csvContent, `${deviceName}_data_${new Date().toISOString()}.csv`);
       }
