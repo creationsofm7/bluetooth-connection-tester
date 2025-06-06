@@ -414,7 +414,7 @@ export default function ApproachFive() {
           >
             {isScanning ? "Scanning..." : "Add a Bluetooth Device"}
           </button>
-          {!navigator.bluetooth && <p style={{color: "orange", marginTop: "10px"}}>Web Bluetooth API not available in this browser. Try Chrome or Edge.</p>}
+          {!navigator.bluetooth && <p style={{color: "#ff6b6b", marginTop: "10px"}}>Web Bluetooth API not available in this browser. Try Chrome or Edge.</p>}
           
           <div className="status">
             <strong>Global Status:</strong> {globalStatus}
@@ -452,7 +452,7 @@ export default function ApproachFive() {
                   <p><strong>Last Connected:</strong> {device.lastConnected.toLocaleTimeString()}</p>
                 )}
                 {device.connectionError && (
-                  <p style={{ color: 'red' }}><strong>Error:</strong> {device.connectionError}</p>
+                  <p style={{ color: '#ff6b6b' }}><strong>Error:</strong> {device.connectionError}</p>
                 )}
               </div>
 
@@ -463,13 +463,13 @@ export default function ApproachFive() {
                 </div>
               )}
               {!device.connected && !device.isConnecting && !device.imuData && device.characteristic && (
-                 <p style={{ color: 'orange' }}>Ready to stream IMU data upon connection.</p>
+                 <p style={{ color: '#ffa500' }}>Ready to stream IMU data upon connection.</p>
               )}
                {device.connected && !device.imuData && device.characteristic && !device.connectionError && (
                  <p>Waiting for IMU data...</p>
               )}
                {device.connected && !device.characteristic && !device.connectionError && (
-                 <p style={{color: 'grey'}}>IMU service not available or not started for this device.</p>
+                 <p style={{color: '#888'}}>IMU service not available or not started for this device.</p>
                )}
 
               <div className="device-actions">
@@ -515,15 +515,25 @@ export default function ApproachFive() {
         </div>
       </div>
 
-      {/* Ensure styled-jsx is correctly configured in your project if type errors persist here */}
       <style jsx>{`
         .approach-container {
           padding: 20px;
           max-width: 1200px;
           margin: 0 auto;
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          background: #f5f7fa;
+          background: #000000;
+          color: #ffffff;
           min-height: 100vh;
+        }
+
+        .approach-container h1 {
+          color: #ffffff;
+          margin-bottom: 8px;
+        }
+
+        .approach-container > p {
+          color: #cccccc;
+          margin-bottom: 24px;
         }
 
         .control-panel {
@@ -532,7 +542,7 @@ export default function ApproachFive() {
           padding: 24px;
           border-radius: 12px;
           margin-bottom: 24px;
-          box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+          box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
         }
 
         .scan-button {
@@ -553,7 +563,7 @@ export default function ApproachFive() {
           box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
         }
         .scan-button:disabled {
-          background: #9e9e9e;
+          background: #666;
           cursor: not-allowed;
           transform: none;
           box-shadow: none;
@@ -576,11 +586,11 @@ export default function ApproachFive() {
         }
 
         .device-card {
-          border: 1px solid #e1e8ed;
+          border: 1px solid #333;
           border-radius: 16px;
           padding: 20px;
-          background: white;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+          background: #000000;
+          box-shadow: 0 4px 20px rgba(255,255,255,0.05);
           display: flex;
           flex-direction: column;
           justify-content: space-between;
@@ -590,11 +600,12 @@ export default function ApproachFive() {
         }
         .device-card:hover {
           transform: translateY(-4px);
-          box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+          box-shadow: 0 8px 30px rgba(255,255,255,0.1);
+          border-color: #555;
         }
         .device-card.device-connected {
           border-left: 6px solid #4CAF50;
-          background: linear-gradient(135deg, #ffffff 0%, #f8fff9 100%);
+          background: #000000;
         }
         .device-card.device-connected::before {
           content: '';
@@ -614,12 +625,12 @@ export default function ApproachFive() {
           align-items: center;
           margin-bottom: 16px;
           padding-bottom: 12px;
-          border-bottom: 2px solid #f0f4f8;
+          border-bottom: 2px solid #222;
         }
 
         .device-header h3 {
           margin: 0;
-          color: #2d3748;
+          color: #ffffff;
           font-size: 1.2em;
           font-weight: 700;
         }
@@ -650,26 +661,26 @@ export default function ApproachFive() {
         }
         .device-info p {
           margin: 8px 0;
-          color: #4a5568;
+          color: #cccccc;
         }
         .device-info p strong {
-          color: #2d3748;
+          color: #ffffff;
           font-weight: 600;
         }
 
         .imu-data-display {
           margin-top: 12px;
           margin-bottom: 20px;
-          background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+          background: #111111;
           padding: 16px;
           border-radius: 12px;
-          border: 1px solid #90cdf4;
+          border: 1px solid #333;
         }
         .imu-data-display h4 {
           margin-top: 0;
           margin-bottom: 12px;
           font-size: 1em;
-          color: #2b6cb0;
+          color: #4da6ff;
           font-weight: 700;
         }
         .imu-data-display pre {
@@ -678,11 +689,11 @@ export default function ApproachFive() {
           font-size: 12px;
           max-height: 150px;
           overflow-y: auto;
-          background: rgba(255, 255, 255, 0.8);
+          background: #000000;
           padding: 12px;
           border-radius: 8px;
-          color: #2d3748;
-          border: 1px solid #cbd5e0;
+          color: #ffffff;
+          border: 1px solid #444;
         }
 
         .device-actions {
@@ -742,37 +753,37 @@ export default function ApproachFive() {
         .empty-state {
           text-align: center;
           padding: 48px 24px;
-          color: #718096;
-          background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+          color: #888;
+          background: #000000;
           border-radius: 16px;
           margin-bottom: 32px;
-          border: 2px dashed #cbd5e0;
+          border: 2px dashed #333;
         }
 
         .device-summary {
-          background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+          background: #000000;
           padding: 24px;
           border-radius: 16px;
           margin-top: 32px;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-          border: 1px solid #e2e8f0;
+          box-shadow: 0 4px 20px rgba(255,255,255,0.05);
+          border: 1px solid #333;
         }
         .device-summary h3 { 
-          color: #2d3748;
+          color: #ffffff;
           font-weight: 700;
           margin-bottom: 16px;
         }
         .device-data {
-          background: #1a202c;
-          color: #e2e8f0;
+          background: #111111;
+          color: #ffffff;
           padding: 20px;
           border-radius: 12px;
           overflow-x: auto;
           font-size: 12px;
           font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-          border: 1px solid #4a5568;
+          border: 1px solid #444;
           max-height: 300px;
-          box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+          box-shadow: inset 0 2px 8px rgba(255,255,255,0.05);
         }
 
         .record-button {
@@ -795,7 +806,7 @@ export default function ApproachFive() {
           box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
         }
         .record-button:disabled {
-          background: #9e9e9e;
+          background: #666;
           cursor: not-allowed;
           transform: none;
           box-shadow: none;
@@ -807,30 +818,30 @@ export default function ApproachFive() {
           height: 8px;
         }
         .device-data::-webkit-scrollbar-track {
-          background: #2d3748;
+          background: #222;
           border-radius: 4px;
         }
         .device-data::-webkit-scrollbar-thumb {
-          background: #4a5568;
+          background: #555;
           border-radius: 4px;
         }
         .device-data::-webkit-scrollbar-thumb:hover {
-          background: #718096;
+          background: #777;
         }
 
         .imu-data-display pre::-webkit-scrollbar {
           width: 6px;
         }
         .imu-data-display pre::-webkit-scrollbar-track {
-          background: #e2e8f0;
+          background: #222;
           border-radius: 3px;
         }
         .imu-data-display pre::-webkit-scrollbar-thumb {
-          background: #cbd5e0;
+          background: #444;
           border-radius: 3px;
         }
         .imu-data-display pre::-webkit-scrollbar-thumb:hover {
-          background: #a0aec0;
+          background: #666;
         }
       `}</style>
     </div>
